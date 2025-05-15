@@ -2,6 +2,7 @@
   <DefaultPage v-if="currentPage.indexOf('index.html') === 0" />
   <OfferPage v-else-if="currentPage.indexOf('offer') === 0" />
   <SettingsPage v-else-if="currentPage.indexOf('settings.html') === 0" />
+  <TravelPortalPage v-else-if="currentPage.indexOf('travel.html') === 0" />
   <DefaultPage v-else />
 </template>
 
@@ -11,6 +12,7 @@ import { sendClickStreamEvent } from '@/CDHIntegration';
 import DefaultPage from './DefaultPage.vue';
 import OfferPage from './OfferPage.vue';
 import SettingsPage from './SettingsPage.vue';
+import TravelPortalPage from './TravelPortalPage.vue';
 
 export default {
   data() {
@@ -60,6 +62,7 @@ export default {
     DefaultPage,
     OfferPage,
     SettingsPage,
+    TravelPortalPage,
   },
 };
 </script>

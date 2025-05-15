@@ -12,7 +12,7 @@
     >
       <section
         class="offer-card-col"
-        v-for="item in app.offers"
+        v-for="(item, index) in app.offers"
         :key="item.title"
       >
         <img
@@ -23,7 +23,10 @@
         <div class="content">
           <h3>{{ $t('message.' + item.title) }}</h3>
           <p>{{ $t('message.' + item.message) }}</p>
-          <a v-on:click="gotoOfferPage" href="./offer.html">{{
+          <a v-if="item.title === 'travel_offer_title'" v-on:click="gotoTravelPage" href="./travel.html">{{
+            $t('message.learnmore')
+          }}</a>
+          <a v-else v-on:click="gotoOfferPage" href="./offer.html">{{
             $t('message.learnmore')
           }}</a>
         </div>
@@ -146,6 +149,24 @@ export default {
         : {};
       window.history.pushState(stateObj, '', 'offer.html');
       mainconfig.offerIndex = 0;
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 0);
+      event.preventDefault();
+    },
+    gotoTravelPage(event) {
+      mainconfig.currentPage = 'travel.html';
+      if (this.$gtag) {
+        this.$gtag.pageview({
+          page_path: mainconfig.currentPage,
+        });
+      }
+      sendClickStreamEvent(mainconfig, 'PageView', 'Travel', window.loadPage);
+      window.loadPage = new Date();
+      const stateObj = mainconfig.isAuthenticated
+        ? { userId: mainconfig.userId }
+        : {};
+      window.history.pushState(stateObj, '', 'travel.html');
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 0);

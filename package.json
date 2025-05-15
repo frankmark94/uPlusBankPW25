@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "lint": "eslint src --fix; exit 0",
-    "dev": "vite",
+    "dev": "node ./node_modules/vite/bin/vite.js",
     "build": "vite build && node scripts/fix_files.mjs",
     "preview": "vite preview --port 5050",
     "test:e2e": "start-server-and-test preview http://localhost:5050 'cypress open'",

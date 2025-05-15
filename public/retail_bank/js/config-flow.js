@@ -39,9 +39,9 @@ window.app = {
   ],
   offers: [
     {
-      img: "offer1.jpg",
-      title: "offer1_title",
-      message: "offer1_msg",
+      img: "travel-offer.jpg",
+      title: "travel_offer_title",
+      message: "travel_offer_msg",
     },
     {
       img: "offer2.jpg",
