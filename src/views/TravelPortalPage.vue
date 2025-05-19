@@ -125,6 +125,71 @@
               <p>Earn and redeem U+ Rewards points with your eligible U+ Bank card, including U+ Rewards Card, Freedom, and Business credit cards.</p>
               <a href="#" class="rewards-link">Browse travel cards</a>
             </div>
+
+            <div class="card-showcase">
+              <h2>Our travel credit cards</h2>
+              <div class="cards-row">
+                <div class="card-container">
+                  <div class="credit-card explorer-card">
+                    <div class="card-content">
+                      <div class="card-logo">U+</div>
+                      <div class="card-name">Explorer</div>
+                      <div class="card-chip"></div>
+                      <div class="card-number">•••• •••• •••• 1234</div>
+                      <div class="card-expiry">VALID THRU 01/28</div>
+                      <div class="cardholder-name">YOUR NAME</div>
+                    </div>
+                  </div>
+                  <div class="card-details">
+                    <h3>U+ Explorer</h3>
+                    <p>3X points on dining and grocery</p>
+                    <p>2X points on all other purchases</p>
+                    <p>No foreign transaction fees</p>
+                    <p><strong>Annual fee:</strong> $95</p>
+                  </div>
+                </div>
+
+                <div class="card-container featured">
+                  <div class="credit-card travelers-card">
+                    <div class="card-content">
+                      <div class="card-logo">U+</div>
+                      <div class="card-name">Travelers</div>
+                      <div class="card-chip"></div>
+                      <div class="card-number">•••• •••• •••• 5678</div>
+                      <div class="card-expiry">VALID THRU 01/28</div>
+                      <div class="cardholder-name">YOUR NAME</div>
+                    </div>
+                  </div>
+                  <div class="card-details">
+                    <h3>U+ Travelers</h3>
+                    <p>5X points on travel bookings</p>
+                    <p>3X points on restaurants worldwide</p>
+                    <p>Priority boarding & lounge access</p>
+                    <p><strong>Annual fee:</strong> $150</p>
+                  </div>
+                </div>
+
+                <div class="card-container">
+                  <div class="credit-card premium-card">
+                    <div class="card-content">
+                      <div class="card-logo">U+</div>
+                      <div class="card-name">Premium</div>
+                      <div class="card-chip"></div>
+                      <div class="card-number">•••• •••• •••• 9012</div>
+                      <div class="card-expiry">VALID THRU 01/28</div>
+                      <div class="cardholder-name">YOUR NAME</div>
+                    </div>
+                  </div>
+                  <div class="card-details">
+                    <h3>U+ Premium</h3>
+                    <p>2X points on all purchases</p>
+                    <p>Annual travel credit of $300</p>
+                    <p>Exclusive concierge service</p>
+                    <p><strong>Annual fee:</strong> $550</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -408,6 +473,178 @@ export default {
   border-radius: 4px;
   text-decoration: none;
   margin-top: 15px;
+}
+
+.card-showcase {
+  margin: 60px 0;
+}
+
+.card-showcase h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 25px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.cards-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.card-container {
+  flex: 1;
+  min-width: 280px;
+  max-width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-container:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.credit-card {
+  height: 200px;
+  padding: 20px;
+  position: relative;
+  color: white;
+  background: linear-gradient(135deg, #333, #555);
+  overflow: hidden;
+}
+
+.explorer-card {
+  background: linear-gradient(135deg, #1e5799, #207cca);
+}
+
+.travelers-card {
+  background: linear-gradient(135deg, #2D8259, #4CAF50);
+}
+
+.premium-card {
+  background: linear-gradient(135deg, #24243e, #302b63, #0f0c29);
+}
+
+.card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.card-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 15px;
+}
+
+.card-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.card-chip {
+  width: 50px;
+  height: 35px;
+  background: linear-gradient(135deg, #bdb76b, #ffd700);
+  border-radius: 5px;
+  margin: 15px 0;
+  position: relative;
+}
+
+.card-chip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  right: 10px;
+  height: 8px;
+  background: rgba(0,0,0,0.1);
+  transform: translateY(-50%);
+}
+
+.card-number {
+  font-size: 1.1rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+}
+
+.card-expiry {
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.cardholder-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.card-details {
+  padding: 25px;
+}
+
+.card-details h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.card-details p {
+  color: #666;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.featured {
+  transform: scale(1.05);
+  z-index: 1;
+  border: 2px solid #2D8259;
+}
+
+.featured:hover {
+  transform: scale(1.05) translateY(-8px);
+}
+
+.featured .card-details h3 {
+  color: #2D8259;
+  font-weight: 700;
+}
+
+.featured::before {
+  content: 'RECOMMENDED';
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background: #2D8259;
+  color: white;
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 2;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 .col-full {
