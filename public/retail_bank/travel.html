@@ -40,61 +40,80 @@
     </div>
     <script type="module" src="/src/main.js"></script>
 
-    <!-- Proactive chat trigger that fires after 12 seconds -->
+    <!-- Proactive chat trigger that fires after 10 seconds -->
     <script language="javascript">
-      // Add a debug message when page loads
-      console.log("Proactive chat trigger script loaded. Waiting for widget initialization...");
+      // Display an on-screen timer for demonstration
+      function showCountdownNotification(seconds, message) {
+        // Create or get the notification div
+        var notificationDiv = document.getElementById('proactiveChatTimer') || document.createElement('div');
+        notificationDiv.id = 'proactiveChatTimer';
+        notificationDiv.style.position = 'fixed';
+        notificationDiv.style.bottom = '20px';
+        notificationDiv.style.right = '20px';
+        notificationDiv.style.padding = '10px';
+        notificationDiv.style.background = 'rgba(0,0,0,0.7)';
+        notificationDiv.style.color = 'white';
+        notificationDiv.style.borderRadius = '5px';
+        notificationDiv.style.zIndex = '9999';
+        notificationDiv.style.fontSize = '14px';
+        notificationDiv.style.fontFamily = 'Arial, sans-serif';
+        notificationDiv.textContent = message || `Proactive chat will trigger in ${seconds} seconds`;
 
-      // Function to check if the widget is fully loaded and initialized
-      function checkWidgetAndTrigger() {
-        console.log("Checking if PegaUnifiedChatWidget is ready...");
-
-        // Create a visible notification on the page
-        var debugDiv = document.createElement('div');
-        debugDiv.style.position = 'fixed';
-        debugDiv.style.bottom = '20px';
-        debugDiv.style.right = '20px';
-        debugDiv.style.padding = '10px';
-        debugDiv.style.background = 'rgba(0,0,0,0.7)';
-        debugDiv.style.color = 'white';
-        debugDiv.style.borderRadius = '5px';
-        debugDiv.style.zIndex = '9999';
-
-        // Check if widget exists and has the triggerChat function
-        if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
-          console.log("PegaUnifiedChatWidget is ready, triggering chat with code: 12sonPage");
-          try {
-            window.PegaUnifiedChatWidget.triggerChat("12sonPage");
-            debugDiv.textContent = "Trigger sent: 12sonPage";
-          } catch(e) {
-            console.error("Error triggering chat:", e);
-            debugDiv.textContent = "Error triggering chat: " + e.message;
-          }
-        } else {
-          console.log("PegaUnifiedChatWidget not ready yet or triggerChat is not a function");
-          debugDiv.textContent = "Widget not fully loaded yet";
+        if (!document.getElementById('proactiveChatTimer')) {
+          document.body.appendChild(notificationDiv);
         }
 
-        document.body.appendChild(debugDiv);
-
-        // Remove the notification after 5 seconds
-        setTimeout(function() {
-          document.body.removeChild(debugDiv);
-        }, 5000);
+        return notificationDiv;
       }
 
-      // Wait for the Pega Chat "loaded" event first
-      document.addEventListener("PegaChatWidget:Loaded", function() {
-        console.log("PegaChatWidget:Loaded event fired, will trigger chat after 12 seconds");
-        // Then wait the additional 12 seconds before triggering
-        setTimeout(checkWidgetAndTrigger, 12000);
-      });
+      // Initialize variables for timer
+      console.log("🕒 TimeOnTravelPage trigger script loaded");
+      let startTime = Date.now();
+      let timeElapsed = 0;
+      let timerNotification;
 
-      // Fallback in case the event doesn't fire - check after 15 seconds anyway
-      setTimeout(function() {
-        console.log("15 seconds elapsed, checking widget status...");
-        checkWidgetAndTrigger();
-      }, 15000);
+      // Create a countdown timer that updates every second
+      const timerInterval = setInterval(function() {
+        timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+        const remainingSeconds = 10 - timeElapsed;
+
+        if (remainingSeconds >= 0) {
+          console.log(`🕒 TimeOnTravelPage trigger: ${remainingSeconds} seconds remaining`);
+          timerNotification = showCountdownNotification(remainingSeconds);
+        }
+
+        // When countdown reaches zero, trigger the chat
+        if (timeElapsed >= 10) {
+          clearInterval(timerInterval);
+          console.log('🚀 Executing proactive chat trigger: TimeOnTravelPage');
+
+          if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
+            try {
+              window.PegaUnifiedChatWidget.triggerChat("TimeOnTravelPage");
+              showCountdownNotification(0, "Proactive chat triggered: TimeOnTravelPage");
+              console.log('✅ Successfully triggered TimeOnTravelPage chat');
+            } catch(e) {
+              console.error("❌ Error triggering chat:", e);
+              showCountdownNotification(0, "Error triggering chat: " + e.message);
+            }
+          } else {
+            console.error("❌ PegaUnifiedChatWidget not available");
+            showCountdownNotification(0, "Widget not available for trigger");
+          }
+
+          // Remove the notification after 5 more seconds
+          setTimeout(function() {
+            if (timerNotification && timerNotification.parentNode) {
+              timerNotification.parentNode.removeChild(timerNotification);
+            }
+          }, 5000);
+        }
+      }, 1000);
+
+      // Also listen for the widget loaded event in case timing is important
+      document.addEventListener("PegaChatWidget:Loaded", function() {
+        console.log("📱 PegaChatWidget:Loaded event received, countdown continues");
+      });
     </script>
   </body>
 </html>
