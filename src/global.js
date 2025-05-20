@@ -5,6 +5,11 @@ import { createI18n } from 'vue-i18n';
 import { reactive } from 'vue';
 import { sendClickStreamEvent } from './CDHIntegration';
 
+// Add a custom debug function to make logging consistent
+const debugPrivateData = (message, data) => {
+  console.log(`%c[PrivateData Debug] ${message}`, 'background: #f0ad4e; color: #000', data || '');
+};
+
 const messages = {};
 const datetimeFormats = {};
 const numberFormats = {};
@@ -490,12 +495,13 @@ if (typeof window.settings === 'undefined') {
   ) {
     if (typeof window.PegaUnifiedChatWidget === 'undefined') {
       window.PegaUnifiedChatWidget = {};
+      debugPrivateData('Initializing PegaUnifiedChatWidget');
       if (
         mainconfigTmp.settings.pega_chat.DMMProactiveChatNewSessionTimeout > 0
       ) {
         setTimeout(() => {
-          console.log(
-            `PegaUnifiedChatWidget triggetChat '${mainconfigTmp.settings.pega_chat.DMMProactiveChatNewSessionCode}'`,
+          debugPrivateData(
+            `Triggering proactive chat with code: ${mainconfigTmp.settings.pega_chat.DMMProactiveChatNewSessionCode}`
           );
           window.PegaUnifiedChatWidget.triggerChat(
             mainconfigTmp.settings.pega_chat.DMMProactiveChatNewSessionCode,
@@ -504,46 +510,84 @@ if (typeof window.settings === 'undefined') {
       }
     }
 
-    // This callback will be invoked every time a new chat session is started
+    // Enhanced onSessionInitialized callback with better debugging
     window.PegaUnifiedChatWidget.onSessionInitialized = (sessionId) => {
       window.PegaCSWSS.DMMSessionID = sessionId;
+      debugPrivateData(`Chat session initialized with ID: ${sessionId}`);
 
-      console.log(`PegaUnifiedChatWidget onSessionInitialized=${sessionId}`);
       /* bump z-index for the iframe chat widget */
       const el = document.getElementById('pegaChatWidget');
       if (el) {
         el.style.zIndex = 1000;
+        debugPrivateData('Updated chat widget z-index');
       }
+
       sendClickStreamEvent(mainconfigTmp, 'PageView', 'Chat', window.loadPage);
+
+      debugPrivateData('Current user info:', {
+        userId: mainconfigTmp.userId,
+        hasSecret: mainconfigTmp.settings.pega_chat.DMMSecret !== '',
+        contactId: window.PegaCSWSS.ContactID,
+        userName: window.PegaCSWSS.UserName
+      });
+
       if (
         mainconfigTmp.settings.pega_chat.DMMSecret !== '' &&
         mainconfigTmp.userId !== -1
       ) {
-        const privateData = {
-          authenticated: mainconfigTmp.userId !== -1,
-          ContactID: window.PegaCSWSS.ContactID,
-          AccountNumber: window.PegaCSWSS.AccountNumber,
-          UserName: window.PegaCSWSS.UserName,
-          UserID: window.PegaCSWSS.UserID,
-        };
-        const jwttoken = generateJWTKey(
-          { iss: sessionId },
-          mainconfigTmp.settings.pega_chat.DMMSecret,
-        );
+        try {
+          const privateData = {
+            authenticated: mainconfigTmp.userId !== -1,
+            ContactID: window.PegaCSWSS.ContactID,
+            AccountNumber: window.PegaCSWSS.AccountNumber,
+            UserName: window.PegaCSWSS.UserName,
+            UserID: window.PegaCSWSS.UserID,
+          };
 
-        const baseUrl = getBaseURL(
-          mainconfigTmp.settings.pega_chat.DMMPrivateURL,
-        );
-        const privateDataEndpoint = baseUrl + '/Prod/private-data';
+          debugPrivateData('Preparing to send private data', privateData);
 
-        const request = new XMLHttpRequest();
-        request.open('POST', privateDataEndpoint, true);
-        request.setRequestHeader(
-          'Content-type',
-          'application/json;charset=UTF-8',
-        );
-        request.setRequestHeader('authorization', `Bearer ${jwttoken}`);
-        request.send(JSON.stringify(privateData));
+          const jwttoken = generateJWTKey(
+            { iss: sessionId },
+            mainconfigTmp.settings.pega_chat.DMMSecret,
+          );
+
+          debugPrivateData('JWT token generated', { token: jwttoken });
+
+          const baseUrl = getBaseURL(
+            mainconfigTmp.settings.pega_chat.DMMPrivateURL,
+          );
+          const privateDataEndpoint = baseUrl + '/Prod/private-data';
+
+          debugPrivateData('Sending private data to endpoint', { url: privateDataEndpoint });
+
+          const request = new XMLHttpRequest();
+          request.open('POST', privateDataEndpoint, true);
+          request.setRequestHeader(
+            'Content-type',
+            'application/json;charset=UTF-8',
+          );
+          request.setRequestHeader('authorization', `Bearer ${jwttoken}`);
+
+          // Add event listeners to track the request
+          request.onload = function() {
+            debugPrivateData(`Private data request completed with status: ${request.status}`, {
+              response: request.responseText
+            });
+          };
+
+          request.onerror = function() {
+            debugPrivateData('Error sending private data request');
+          };
+
+          request.send(JSON.stringify(privateData));
+        } catch (error) {
+          debugPrivateData('Error in private data exchange', error);
+        }
+      } else {
+        debugPrivateData('Private data not sent - missing requirements', {
+          hasSecret: mainconfigTmp.settings.pega_chat.DMMSecret !== '',
+          loggedIn: mainconfigTmp.userId !== -1
+        });
       }
     };
 
@@ -846,35 +890,54 @@ export const updatePegaChat = function updatePegaChat(u) {
     mainconfig.userId !== -1 &&
     window.PegaCSWSS.DMMSessionID !== ''
   ) {
-    const privateData = {
-      authenticated: mainconfig.userId !== -1,
-      ContactID: window.PegaCSWSS.ContactID,
-      AccountNumber: window.PegaCSWSS.AccountNumber,
-      UserName: window.PegaCSWSS.UserName,
-      UserID: window.PegaCSWSS.UserID,
-    };
-    const jwttoken = generateJWTKey(
-      { iss: window.PegaCSWSS.DMMSessionID },
-      mainconfig.settings.pega_chat.DMMSecret,
-    );
+    try {
+      debugPrivateData('Updating chat with private data after user change');
 
-    const url = mainconfigTmp.settings.pega_chat.DMMPrivateURL;
-    const parsedURL = new URL(url);
-    const baseUrl = parsedURL.origin;
-    const privateDataEndpoint = baseUrl + '/Prod/private-data';
+      const privateData = {
+        authenticated: mainconfig.userId !== -1,
+        ContactID: window.PegaCSWSS.ContactID,
+        AccountNumber: window.PegaCSWSS.AccountNumber,
+        UserName: window.PegaCSWSS.UserName,
+        UserID: window.PegaCSWSS.UserID,
+      };
 
-    const request = new XMLHttpRequest();
-    request.open('POST', privateDataEndpoint, true);
-    request.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
-    request.setRequestHeader('authorization', `Bearer ${jwttoken}`);
-    request.send(JSON.stringify(privateData));
-  }
-  if (typeof u.extraparam !== 'undefined' && u.extraparam !== '') {
-    u.extraparam.split(',').forEach((item) => {
-      const values = item.split('=');
-      if (values.length === 2) {
-        window.PegaCSWSS.ExtraParams[values[0].trim()] = values[1].trim();
-      }
+      debugPrivateData('Private data for chat update', privateData);
+
+      const jwttoken = generateJWTKey(
+        { iss: window.PegaCSWSS.DMMSessionID },
+        mainconfig.settings.pega_chat.DMMSecret,
+      );
+
+      const url = mainconfig.settings.pega_chat.DMMPrivateURL;
+      const parsedURL = new URL(url);
+      const baseUrl = parsedURL.origin;
+      const privateDataEndpoint = baseUrl + '/Prod/private-data';
+
+      debugPrivateData('Sending updated private data to', { endpoint: privateDataEndpoint });
+
+      const request = new XMLHttpRequest();
+      request.open('POST', privateDataEndpoint, true);
+      request.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+      request.setRequestHeader('authorization', `Bearer ${jwttoken}`);
+
+      // Add event listeners
+      request.onload = function() {
+        debugPrivateData(`Updated private data request completed with status: ${request.status}`);
+      };
+
+      request.onerror = function() {
+        debugPrivateData('Error sending updated private data');
+      };
+
+      request.send(JSON.stringify(privateData));
+    } catch (error) {
+      debugPrivateData('Error updating private data', error);
+    }
+  } else {
+    debugPrivateData('Private data update skipped - missing requirements', {
+      hasSecret: mainconfig.settings.pega_chat.DMMSecret !== '',
+      loggedIn: mainconfig.userId !== -1,
+      hasSessionId: window.PegaCSWSS.DMMSessionID !== ''
     });
   }
   el = document.querySelector("[data-pega-gadgetname='OnlineHelp']");
@@ -893,3 +956,305 @@ export const updatePegaChat = function updatePegaChat(u) {
   }
 };
 export default mainconfig;
+
+// Add a utility function that can be called from the console to manually send private data
+window.forcePrivateDataTransmission = function() {
+  debugPrivateData('Manually forcing private data transmission');
+
+  if (!window.PegaCSWSS.DMMSessionID) {
+    debugPrivateData('ERROR: No chat session ID available. Open chat first to get a session ID.');
+    return false;
+  }
+
+  if (mainconfig.userId === -1) {
+    debugPrivateData('ERROR: No user is logged in. Please log in first.');
+    return false;
+  }
+
+  if (!mainconfig.settings.pega_chat.DMMSecret) {
+    debugPrivateData('ERROR: No DMMSecret configured in settings.');
+    return false;
+  }
+
+  try {
+    const privateData = {
+      authenticated: true,
+      ContactID: window.PegaCSWSS.ContactID || '',
+      AccountNumber: window.PegaCSWSS.AccountNumber || '',
+      UserName: window.PegaCSWSS.UserName || '',
+      UserID: window.PegaCSWSS.UserID || '',
+      manuallyTriggered: true
+    };
+
+    debugPrivateData('Manual private data being sent:', privateData);
+
+    const jwttoken = generateJWTKey(
+      { iss: window.PegaCSWSS.DMMSessionID },
+      mainconfig.settings.pega_chat.DMMSecret
+    );
+
+    const url = mainconfig.settings.pega_chat.DMMPrivateURL;
+    const parsedURL = new URL(url);
+    const baseUrl = parsedURL.origin;
+    const privateDataEndpoint = baseUrl + '/Prod/private-data';
+
+    debugPrivateData('Sending to endpoint:', privateDataEndpoint);
+
+    const request = new XMLHttpRequest();
+    request.open('POST', privateDataEndpoint, true);
+    request.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+    request.setRequestHeader('authorization', `Bearer ${jwttoken}`);
+
+    request.onload = function() {
+      debugPrivateData(`Manual private data request completed with status: ${request.status}`, {
+        response: request.responseText
+      });
+      return request.status >= 200 && request.status < 300;
+    };
+
+    request.onerror = function() {
+      debugPrivateData('Error sending manual private data request');
+      return false;
+    };
+
+    request.send(JSON.stringify(privateData));
+    return true;
+  } catch (error) {
+    debugPrivateData('Error in manual private data transmission', error);
+    return false;
+  }
+};
+
+// Also add a utility to check the current state of private data configuration
+window.checkPrivateDataConfig = function() {
+  const config = {
+    isLoggedIn: mainconfig.userId !== -1,
+    currentUser: mainconfig.userId !== -1 ? mainconfig.settings.users[mainconfig.userId].username : 'None',
+    hasSessionId: !!window.PegaCSWSS.DMMSessionID,
+    sessionId: window.PegaCSWSS.DMMSessionID || 'None',
+    hasSecret: !!mainconfig.settings.pega_chat.DMMSecret,
+    privateDataURL: mainconfig.settings.pega_chat.DMMPrivateURL,
+    userDetails: {
+      ContactID: window.PegaCSWSS.ContactID || 'None',
+      AccountNumber: window.PegaCSWSS.AccountNumber || 'None',
+      UserName: window.PegaCSWSS.UserName || 'None',
+      UserID: window.PegaCSWSS.UserID || 'None'
+    }
+  };
+
+  debugPrivateData('Private data configuration:', config);
+  return config;
+};
+
+// Add WebSocket monitoring to help debug chat communication
+window.monitorWebSockets = function() {
+  debugPrivateData('Setting up WebSocket monitoring');
+
+  // Store the original WebSocket
+  const OriginalWebSocket = window.WebSocket;
+
+  // Create a proxy to monitor the WebSocket
+  window.WebSocket = function(url, protocols) {
+    debugPrivateData(`New WebSocket connection to: ${url}`);
+
+    // Create an instance of the original WebSocket
+    const socket = protocols ? new OriginalWebSocket(url, protocols) : new OriginalWebSocket(url);
+
+    // Override the send method
+    const originalSend = socket.send;
+    socket.send = function(data) {
+      try {
+        const parsedData = JSON.parse(data);
+        debugPrivateData('WebSocket sending:', parsedData);
+      } catch (e) {
+        debugPrivateData('WebSocket sending (raw):', data);
+      }
+
+      // Call the original send method
+      originalSend.call(socket, data);
+    };
+
+    // Override the onmessage event
+    socket.addEventListener('message', function(event) {
+      try {
+        const parsedData = JSON.parse(event.data);
+        debugPrivateData('WebSocket received:', parsedData);
+      } catch (e) {
+        debugPrivateData('WebSocket received (raw):', event.data);
+      }
+    });
+
+    socket.addEventListener('open', function() {
+      debugPrivateData('WebSocket connection opened');
+    });
+
+    socket.addEventListener('close', function(event) {
+      debugPrivateData('WebSocket connection closed', { code: event.code, reason: event.reason });
+    });
+
+    socket.addEventListener('error', function(error) {
+      debugPrivateData('WebSocket error occurred', error);
+    });
+
+    return socket;
+  };
+
+  // Copy properties from the original WebSocket to the new one
+  for (const prop in OriginalWebSocket) {
+    if (OriginalWebSocket.hasOwnProperty(prop)) {
+      window.WebSocket[prop] = OriginalWebSocket[prop];
+    }
+  }
+
+  window.WebSocket.prototype = OriginalWebSocket.prototype;
+  window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+  window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+  window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+  window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+
+  debugPrivateData('WebSocket monitoring enabled');
+  return true;
+};
+
+// Start monitoring automatically
+setTimeout(() => {
+  try {
+    window.monitorWebSockets();
+  } catch (e) {
+    console.error('Failed to start WebSocket monitoring', e);
+  }
+}, 1000);
+
+// Add a utility to check for chat session ID and send private data automatically
+window.checkAndSendPrivateData = function() {
+  // Try getting session ID from various possible locations
+  debugPrivateData('Checking for chat session ID...');
+
+  // Check localStorage for sessionId (this is where many chat widgets store it)
+  const sessionId = localStorage.getItem('sessionId');
+
+  if (sessionId && (!window.PegaCSWSS.DMMSessionID || window.PegaCSWSS.DMMSessionID !== sessionId)) {
+    debugPrivateData(`Found session ID in localStorage: ${sessionId}`);
+    window.PegaCSWSS.DMMSessionID = sessionId;
+
+    if (mainconfig.userId !== -1 && mainconfig.settings.pega_chat.DMMSecret) {
+      try {
+        debugPrivateData('Sending private data with discovered session ID');
+
+        const privateData = {
+          authenticated: true,
+          ContactID: window.PegaCSWSS.ContactID || '',
+          AccountNumber: window.PegaCSWSS.AccountNumber || '',
+          UserName: window.PegaCSWSS.UserName || '',
+          UserID: window.PegaCSWSS.UserID || '',
+          autoDiscovered: true
+        };
+
+        debugPrivateData('Auto-discovered private data being sent:', privateData);
+
+        const jwttoken = generateJWTKey(
+          { iss: sessionId },
+          mainconfig.settings.pega_chat.DMMSecret
+        );
+
+        const url = mainconfig.settings.pega_chat.DMMPrivateURL;
+        const parsedURL = new URL(url);
+        const baseUrl = parsedURL.origin;
+        const privateDataEndpoint = baseUrl + '/Prod/private-data';
+
+        debugPrivateData('Sending to endpoint:', privateDataEndpoint);
+
+        const request = new XMLHttpRequest();
+        request.open('POST', privateDataEndpoint, true);
+        request.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+        request.setRequestHeader('authorization', `Bearer ${jwttoken}`);
+
+        request.onload = function() {
+          debugPrivateData(`Auto-discovered private data request completed with status: ${request.status}`, {
+            response: request.responseText
+          });
+        };
+
+        request.onerror = function() {
+          debugPrivateData('Error sending auto-discovered private data request');
+        };
+
+        request.send(JSON.stringify(privateData));
+        return true;
+      } catch (error) {
+        debugPrivateData('Error in auto-discovered private data transmission', error);
+      }
+    } else {
+      debugPrivateData('Cannot send private data - missing requirements', {
+        isLoggedIn: mainconfig.userId !== -1,
+        hasSecret: !!mainconfig.settings.pega_chat.DMMSecret
+      });
+    }
+  } else {
+    debugPrivateData('No new session ID found');
+  }
+
+  return false;
+};
+
+// Start a polling mechanism to check for session ID and send private data
+setTimeout(function pollForSessionId() {
+  try {
+    window.checkAndSendPrivateData();
+  } catch (e) {
+    console.error('Error checking for session ID', e);
+  }
+  // Continue polling every 2 seconds
+  setTimeout(pollForSessionId, 2000);
+}, 2000);
+
+// Also patch the original onSessionInitialized to make absolutely sure it works
+const originalOnSessionInitialized = window.PegaUnifiedChatWidget && window.PegaUnifiedChatWidget.onSessionInitialized;
+if (window.PegaUnifiedChatWidget) {
+  window.PegaUnifiedChatWidget.onSessionInitializedWrapper = function(sessionId) {
+    debugPrivateData(`Chat session initialized via wrapper with ID: ${sessionId}`);
+
+    // Store in localStorage to ensure our poller can find it too
+    localStorage.setItem('sessionId', sessionId);
+
+    // Call original handler if it exists
+    if (typeof originalOnSessionInitialized === 'function') {
+      originalOnSessionInitialized(sessionId);
+    }
+  };
+
+  // Replace the original handler with our wrapper
+  window.PegaUnifiedChatWidget.onSessionInitialized = window.PegaUnifiedChatWidget.onSessionInitializedWrapper;
+}
+
+// Add a function to check all possible localStorage keys that might contain the session ID
+window.findPossibleSessionIds = function() {
+  const results = {};
+  debugPrivateData('Scanning localStorage for possible session IDs');
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key);
+
+    // Look for keys/values that might contain session info
+    if (
+      key.toLowerCase().includes('session') ||
+      key.toLowerCase().includes('chat') ||
+      key.toLowerCase().includes('id') ||
+      key.toLowerCase().includes('token') ||
+      (typeof value === 'string' &&
+        (value.includes('-') ||
+         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)))
+    ) {
+      results[key] = value;
+    }
+  }
+
+  debugPrivateData('Possible session IDs found:', results);
+  return results;
+};
+
+// Call this once at startup to check for existing session IDs
+setTimeout(() => {
+  window.findPossibleSessionIds();
+}, 3000);
