@@ -196,12 +196,14 @@
     </main>
     <MainFooter />
 
-    <!-- Proactive Chat Trigger Clock -->
-    <div id="triggerClock" @click="toggleTriggerStatus">⏰</div>
-    <div id="triggerStatus">
-      <div class="status-title">Proactive Chat Trigger</div>
-      <div class="status-countdown">{{ triggerCountdown }}</div>
-      <div class="status-message">{{ triggerMessage }}</div>
+    <!-- Proactive Chat Trigger Elements - Now grouped together and toggled with \ key -->
+    <div class="trigger-container" v-show="showTriggerClock">
+      <div id="triggerClock" @click="toggleTriggerStatus">⏰</div>
+      <div id="triggerStatus">
+        <div class="status-title">Proactive Chat Trigger</div>
+        <div class="status-countdown">{{ triggerCountdown }}</div>
+        <div class="status-message">{{ triggerMessage }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -219,7 +221,9 @@ export default {
       triggerMessage: 'Waiting to start countdown...',
       triggerInterval: null,
       triggerStarted: false,
-      triggerClockPulsing: false
+      triggerClockPulsing: false,
+      showTriggerClock: false,
+      showTriggerStatus: true // Always show status when clock is visible
     };
   },
   components: {
@@ -227,15 +231,36 @@ export default {
     MainFooter
   },
   methods: {
+    // Now just toggles between expanded/collapsed status panel
     toggleTriggerStatus() {
-      const status = document.getElementById('triggerStatus');
-      if (status.style.display === 'none' || !status.style.display) {
-        status.style.display = 'block';
-      } else {
-        status.style.display = 'none';
-        // Remove pulse if we're hiding the status
-        if (!this.triggerClockPulsing) {
-          document.getElementById('triggerClock').classList.remove('pulse');
+      // Since we always show both, this now toggles between expanded/collapsed status
+      const statusEl = document.getElementById('triggerStatus');
+      if (statusEl) {
+        statusEl.classList.toggle('collapsed');
+      }
+    },
+
+    // Toggle clock visibility when \ key is pressed
+    handleKeyPress(event) {
+      if (event.key === '\\') {
+        // Toggle both the clock and status panel together
+        this.showTriggerClock = !this.showTriggerClock;
+
+        console.log(`Trigger elements toggled: ${this.showTriggerClock ? 'shown' : 'hidden'}`);
+
+        // Handle pulse effect appropriately
+        if (!this.showTriggerClock) {
+          // Remove pulse effect when hiding
+          const clockEl = document.getElementById('triggerClock');
+          if (clockEl) {
+            clockEl.classList.remove('pulse');
+          }
+        } else {
+          // Reset collapsed state when showing again
+          const statusEl = document.getElementById('triggerStatus');
+          if (statusEl) {
+            statusEl.classList.remove('collapsed');
+          }
         }
       }
     },
@@ -275,11 +300,16 @@ export default {
 
           // Make the clock pulse
           const clockEl = document.getElementById('triggerClock');
-          clockEl.classList.add('pulse');
-          this.triggerClockPulsing = true;
+          if (clockEl) {
+            clockEl.classList.add('pulse');
+            this.triggerClockPulsing = true;
+          }
 
-          // Show the status
-          document.getElementById('triggerStatus').style.display = 'block';
+          // Ensure status is visible and not collapsed
+          const statusEl = document.getElementById('triggerStatus');
+          if (statusEl) {
+            statusEl.classList.remove('collapsed');
+          }
 
           // Check if widget exists and trigger the chat
           if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
@@ -294,8 +324,7 @@ export default {
               // After 5 seconds, stop pulsing
               setTimeout(() => {
                 this.triggerClockPulsing = false;
-                // Only remove pulse if status is hidden
-                if (document.getElementById('triggerStatus').style.display === 'none') {
+                if (clockEl) {
                   clockEl.classList.remove('pulse');
                 }
               }, 5000);
@@ -368,6 +397,18 @@ export default {
     // Start checking for the widget
     console.log('🚀 TimeOnTravelPage trigger initialized in Vue component');
     setTimeout(this.checkWidgetAndStart, 1000);
+
+    // Add event listener for keypress
+    document.addEventListener('keydown', this.handleKeyPress);
+  },
+  beforeDestroy() {
+    // Remove event listener for keypress
+    document.removeEventListener('keydown', this.handleKeyPress);
+
+    // Clear interval if it exists
+    if (this.triggerInterval) {
+      clearInterval(this.triggerInterval);
+    }
   }
 };
 </script>
@@ -808,10 +849,18 @@ export default {
 }
 
 /* Styles for the clock and trigger indicator */
-#triggerClock {
+.trigger-container {
   position: fixed;
   left: 20px;
   bottom: 20px;
+  z-index: 999998;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+#triggerClock {
+  position: relative;
   background-color: #3C8712;
   color: white;
   padding: 12px 15px;
@@ -819,7 +868,6 @@ export default {
   font-size: 18px;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  z-index: 999998;
   width: 24px;
   height: 24px;
   display: flex;
@@ -827,6 +875,7 @@ export default {
   justify-content: center;
   transition: all 0.3s ease;
   border: 2px solid white;
+  z-index: 999999;
 }
 
 #triggerClock:hover {
@@ -835,20 +884,28 @@ export default {
 }
 
 #triggerStatus {
-  position: fixed;
-  left: 20px;
-  bottom: 80px;
+  position: relative;
+  left: 0;
+  bottom: 0;
+  margin-top: 10px;
   background-color: rgba(0,0,0,0.85);
   color: white;
   padding: 15px;
   border-radius: 8px;
   font-size: 16px;
-  z-index: 999997;
   min-width: 250px;
-  display: none;
   font-family: Arial, sans-serif;
   border: 2px solid #3C8712;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+
+/* Collapsed state for status panel */
+#triggerStatus.collapsed {
+  height: 10px;
+  overflow: hidden;
+  padding: 8px 15px;
+  opacity: 0.7;
 }
 
 .status-title {
