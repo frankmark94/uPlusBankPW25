@@ -195,6 +195,14 @@
       </div>
     </main>
     <MainFooter />
+
+    <!-- Proactive Chat Trigger Clock -->
+    <div id="triggerClock" @click="toggleTriggerStatus">⏰</div>
+    <div id="triggerStatus">
+      <div class="status-title">Proactive Chat Trigger</div>
+      <div class="status-countdown">{{ triggerCountdown }}</div>
+      <div class="status-message">{{ triggerMessage }}</div>
+    </div>
   </div>
 </template>
 
@@ -206,12 +214,160 @@ import MainFooter from '../components/MainFooter.vue';
 export default {
   data() {
     return {
-      ...mainconfig
+      ...mainconfig,
+      triggerCountdown: 10,
+      triggerMessage: 'Waiting to start countdown...',
+      triggerInterval: null,
+      triggerStarted: false,
+      triggerClockPulsing: false
     };
   },
   components: {
     MainHeader,
     MainFooter
+  },
+  methods: {
+    toggleTriggerStatus() {
+      const status = document.getElementById('triggerStatus');
+      if (status.style.display === 'none' || !status.style.display) {
+        status.style.display = 'block';
+      } else {
+        status.style.display = 'none';
+        // Remove pulse if we're hiding the status
+        if (!this.triggerClockPulsing) {
+          document.getElementById('triggerClock').classList.remove('pulse');
+        }
+      }
+    },
+
+    startProactiveTrigger() {
+      console.log('⏱️ Starting TimeOnTravelPage proactive trigger countdown');
+      this.triggerStarted = true;
+      this.triggerMessage = 'Starting 10 second countdown';
+
+      // Clear any existing interval
+      if (this.triggerInterval) {
+        clearInterval(this.triggerInterval);
+      }
+
+      // Start a new countdown
+      let timeElapsed = 0;
+      const startTime = Date.now();
+
+      this.triggerInterval = setInterval(() => {
+        timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+        const remainingSeconds = 10 - timeElapsed;
+
+        // Update countdown
+        if (remainingSeconds >= 0) {
+          this.triggerCountdown = remainingSeconds;
+          this.triggerMessage = `Countdown in progress: ${remainingSeconds}s remaining`;
+          console.log(`⏱️ TimeOnTravelPage trigger countdown: ${remainingSeconds} seconds remaining`);
+        }
+
+        // When countdown reaches zero, trigger the chat
+        if (timeElapsed >= 10) {
+          clearInterval(this.triggerInterval);
+          this.triggerInterval = null;
+          this.triggerCountdown = 0;
+          this.triggerMessage = 'EXECUTING trigger NOW';
+          console.log('🔔 EXECUTING proactive chat trigger: TimeOnTravelPage');
+
+          // Make the clock pulse
+          const clockEl = document.getElementById('triggerClock');
+          clockEl.classList.add('pulse');
+          this.triggerClockPulsing = true;
+
+          // Show the status
+          document.getElementById('triggerStatus').style.display = 'block';
+
+          // Check if widget exists and trigger the chat
+          if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
+            try {
+              // Actually trigger the chat
+              window.PegaUnifiedChatWidget.triggerChat('TimeOnTravelPage');
+              console.log('✅ Successfully triggered TimeOnTravelPage chat');
+
+              // Update the status
+              this.triggerMessage = '✅ Trigger successfully executed!';
+
+              // After 5 seconds, stop pulsing
+              setTimeout(() => {
+                this.triggerClockPulsing = false;
+                // Only remove pulse if status is hidden
+                if (document.getElementById('triggerStatus').style.display === 'none') {
+                  clockEl.classList.remove('pulse');
+                }
+              }, 5000);
+
+            } catch(e) {
+              console.error('❌ Error triggering chat:', e);
+              this.triggerMessage = `❌ ERROR: ${e.message}`;
+            }
+          } else {
+            console.error('❌ PegaUnifiedChatWidget not available or triggerChat is not a function');
+            this.triggerMessage = '❌ ERROR: Widget not available';
+
+            if (window.PegaUnifiedChatWidget) {
+              console.log('Widget status: Available but missing triggerChat method');
+              console.log('Available methods:', Object.keys(window.PegaUnifiedChatWidget));
+            } else {
+              console.log('Widget status: Not available');
+            }
+          }
+        }
+      }, 1000);
+    },
+
+    checkWidgetAndStart() {
+      console.log('Checking if Pega chat widget is loaded...');
+      this.triggerMessage = 'Checking if widget is loaded...';
+
+      if (window.PegaUnifiedChatWidget) {
+        console.log('✅ PegaUnifiedChatWidget found, starting countdown');
+        this.triggerMessage = 'Widget found, starting countdown';
+        this.startProactiveTrigger();
+      } else {
+        console.log('⏳ PegaUnifiedChatWidget not found yet, waiting...');
+        this.triggerMessage = 'Waiting for widget to load...';
+        // Check again in 1 second
+        setTimeout(this.checkWidgetAndStart, 1000);
+      }
+    },
+
+    // For manual testing from console
+    manualTrigger() {
+      console.log('🔔 Manually triggering TimeOnTravelPage');
+      this.triggerMessage = 'Manually triggering NOW';
+      if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
+        window.PegaUnifiedChatWidget.triggerChat('TimeOnTravelPage');
+        this.triggerMessage = '✅ Manual trigger executed!';
+        return 'Trigger sent!';
+      } else {
+        console.error('Widget not available');
+        this.triggerMessage = '❌ ERROR: Widget not available';
+        return 'Widget not available';
+      }
+    }
+  },
+  mounted() {
+    // Make the manual trigger available globally
+    window.triggerTimeOnTravelPage = this.manualTrigger;
+
+    // Listen for the widget loaded event
+    document.addEventListener('PegaChatWidget:Loaded', () => {
+      console.log('📱 PegaChatWidget:Loaded event received');
+      this.triggerMessage = 'Widget loaded event received';
+
+      // Start the trigger if not already started
+      if (!this.triggerStarted) {
+        this.startProactiveTrigger();
+      }
+    });
+
+    // Start checking for the widget
+    console.log('🚀 TimeOnTravelPage trigger initialized in Vue component');
+    setTimeout(this.checkWidgetAndStart, 1000);
   }
 };
 </script>
@@ -649,5 +805,75 @@ export default {
 
 .col-full {
   width: 100%;
+}
+
+/* Styles for the clock and trigger indicator */
+#triggerClock {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  background-color: #3C8712;
+  color: white;
+  padding: 12px 15px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  z-index: 999998;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border: 2px solid white;
+}
+
+#triggerClock:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+}
+
+#triggerStatus {
+  position: fixed;
+  left: 20px;
+  bottom: 80px;
+  background-color: rgba(0,0,0,0.85);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 16px;
+  z-index: 999997;
+  min-width: 250px;
+  display: none;
+  font-family: Arial, sans-serif;
+  border: 2px solid #3C8712;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.status-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #3C8712;
+}
+
+.status-countdown {
+  font-size: 28px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.status-message {
+  margin-top: 8px;
+}
+
+.pulse {
+  animation: pulse-animation 1.5s infinite;
+}
+
+@keyframes pulse-animation {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); background-color: #ff6b00; }
+  100% { transform: scale(1); }
 }
 </style>
