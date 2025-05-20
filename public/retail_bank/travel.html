@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>U+Bank Travel Portal</title>
     <meta name="description" content="U+Bank Travel Portal - Your gateway to exclusive travel benefits, foreign transaction fee waivers, and dedicated travel support." />
+    <!-- Pega Chat Widget Script -->
+    <script src="https://widget.use1.chat.pega.digital/e03b7c71-ac8b-4cb4-b890-d813ff3b9074/widget.js"></script>
     <style>
       .splash {
         position: fixed;
@@ -37,5 +39,62 @@
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>
+
+    <!-- Proactive chat trigger that fires after 12 seconds -->
+    <script language="javascript">
+      // Add a debug message when page loads
+      console.log("Proactive chat trigger script loaded. Waiting for widget initialization...");
+
+      // Function to check if the widget is fully loaded and initialized
+      function checkWidgetAndTrigger() {
+        console.log("Checking if PegaUnifiedChatWidget is ready...");
+
+        // Create a visible notification on the page
+        var debugDiv = document.createElement('div');
+        debugDiv.style.position = 'fixed';
+        debugDiv.style.bottom = '20px';
+        debugDiv.style.right = '20px';
+        debugDiv.style.padding = '10px';
+        debugDiv.style.background = 'rgba(0,0,0,0.7)';
+        debugDiv.style.color = 'white';
+        debugDiv.style.borderRadius = '5px';
+        debugDiv.style.zIndex = '9999';
+
+        // Check if widget exists and has the triggerChat function
+        if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
+          console.log("PegaUnifiedChatWidget is ready, triggering chat with code: 12sonPage");
+          try {
+            window.PegaUnifiedChatWidget.triggerChat("12sonPage");
+            debugDiv.textContent = "Trigger sent: 12sonPage";
+          } catch(e) {
+            console.error("Error triggering chat:", e);
+            debugDiv.textContent = "Error triggering chat: " + e.message;
+          }
+        } else {
+          console.log("PegaUnifiedChatWidget not ready yet or triggerChat is not a function");
+          debugDiv.textContent = "Widget not fully loaded yet";
+        }
+
+        document.body.appendChild(debugDiv);
+
+        // Remove the notification after 5 seconds
+        setTimeout(function() {
+          document.body.removeChild(debugDiv);
+        }, 5000);
+      }
+
+      // Wait for the Pega Chat "loaded" event first
+      document.addEventListener("PegaChatWidget:Loaded", function() {
+        console.log("PegaChatWidget:Loaded event fired, will trigger chat after 12 seconds");
+        // Then wait the additional 12 seconds before triggering
+        setTimeout(checkWidgetAndTrigger, 12000);
+      });
+
+      // Fallback in case the event doesn't fire - check after 15 seconds anyway
+      setTimeout(function() {
+        console.log("15 seconds elapsed, checking widget status...");
+        checkWidgetAndTrigger();
+      }, 15000);
+    </script>
   </body>
 </html>
