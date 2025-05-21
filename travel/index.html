@@ -38,6 +38,36 @@
       document.write('<script src="/travel/i18n/lang-' + settings.i18n.languages[i] + '.js"><\/script>');
     }
   </script>
+
+  <!-- Proactive Chat Trigger -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set a timer for 10 seconds (10000 milliseconds)
+      let startTime = Date.now();
+      let timeElapsed = 0;
+
+      console.log('🕒 Starting proactive chat timer for trigger: TimeOnTravelPage');
+
+      // Create a timer that logs every second until it reaches 10 seconds
+      const timerInterval = setInterval(function() {
+        timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+        console.log(`🕒 Proactive chat timer: ${timeElapsed} seconds elapsed`);
+
+        if (timeElapsed >= 10) {
+          clearInterval(timerInterval);
+          console.log('🚀 Executing proactive chat trigger: TimeOnTravelPage');
+
+          // Check if the chat widget is ready
+          if (typeof PegaUnifiedChatWidget !== 'undefined') {
+            console.log('📱 PegaUnifiedChatWidget found, triggering chat');
+            PegaUnifiedChatWidget.triggerChat("TimeOnTravelPage");
+          } else {
+            console.error('❌ PegaUnifiedChatWidget not found, cannot trigger chat');
+          }
+        }
+      }, 1000);
+    });
+  </script>
 </head>
 
 <body>

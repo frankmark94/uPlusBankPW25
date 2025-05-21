@@ -10,6 +10,22 @@ const debugPrivateData = (message, data) => {
   console.log(`%c[PrivateData Debug] ${message}`, 'background: #f0ad4e; color: #000', data || '');
 };
 
+// Hide the default Pega chat widget launcher
+const hidePegaDefaultLauncher = () => {
+  // Create a style element to hide the default launcher
+  const style = document.createElement('style');
+  style.textContent = `
+    /* Hide the default Pega chat widget launcher */
+    .unified-chat-widget-launcher-container {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+// Call this function once the global script is loaded
+setTimeout(hidePegaDefaultLauncher, 500);
+
 const messages = {};
 const datetimeFormats = {};
 const numberFormats = {};

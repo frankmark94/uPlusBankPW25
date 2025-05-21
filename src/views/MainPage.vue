@@ -1,9 +1,17 @@
 <template>
-  <DefaultPage v-if="currentPage.indexOf('index.html') === 0" />
-  <OfferPage v-else-if="currentPage.indexOf('offer') === 0" />
-  <SettingsPage v-else-if="currentPage.indexOf('settings.html') === 0" />
-  <TravelPortalPage v-else-if="currentPage.indexOf('travel.html') === 0" />
-  <DefaultPage v-else />
+  <div>
+    <DefaultPage v-if="currentPage.indexOf('index.html') === 0" />
+    <OfferPage v-else-if="currentPage.indexOf('offer') === 0" />
+    <SettingsPage v-else-if="currentPage.indexOf('settings.html') === 0" />
+    <TravelPortalPage v-else-if="currentPage.indexOf('travel.html') === 0" />
+    <DefaultPage v-else />
+
+    <!-- Script Menu component included at the application level -->
+    <ScriptMenu />
+
+    <!-- Custom Chat Launcher component -->
+    <CustomChatLauncher />
+  </div>
 </template>
 
 <script>
@@ -13,6 +21,8 @@ import DefaultPage from './DefaultPage.vue';
 import OfferPage from './OfferPage.vue';
 import SettingsPage from './SettingsPage.vue';
 import TravelPortalPage from './TravelPortalPage.vue';
+import ScriptMenu from '@/components/ScriptMenu.vue';
+import CustomChatLauncher from '@/components/CustomChatLauncher.vue';
 
 export default {
   data() {
@@ -63,6 +73,8 @@ export default {
     OfferPage,
     SettingsPage,
     TravelPortalPage,
+    ScriptMenu,
+    CustomChatLauncher
   },
 };
 </script>

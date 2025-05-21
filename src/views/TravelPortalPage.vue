@@ -212,18 +212,20 @@
 import { mainconfig } from '../global';
 import MainHeader from '../components/MainHeader.vue';
 import MainFooter from '../components/MainFooter.vue';
+import triggerStore from '../triggerStore';
 
 export default {
   data() {
     return {
       ...mainconfig,
-      triggerCountdown: 10,
+      triggerCountdown: triggerStore.triggerDelay,
       triggerMessage: 'Waiting to start countdown...',
       triggerInterval: null,
       triggerStarted: false,
       triggerClockPulsing: false,
       showTriggerClock: false,
-      showTriggerStatus: true // Always show status when clock is visible
+      showTriggerStatus: true, // Always show status when clock is visible
+      triggerStore // Make triggerStore available in the template
     };
   },
   components: {
@@ -266,9 +268,10 @@ export default {
     },
 
     startProactiveTrigger() {
-      console.log('⏱️ Starting TimeOnTravelPage proactive trigger countdown');
+      console.log(`⏱️ Starting ${triggerStore.triggerName} proactive trigger countdown (${triggerStore.triggerDelay}s)`);
       this.triggerStarted = true;
-      this.triggerMessage = 'Starting 10 second countdown';
+      this.triggerMessage = `Starting ${triggerStore.triggerDelay} second countdown`;
+      this.triggerCountdown = triggerStore.triggerDelay;
 
       // Clear any existing interval
       if (this.triggerInterval) {
@@ -278,25 +281,26 @@ export default {
       // Start a new countdown
       let timeElapsed = 0;
       const startTime = Date.now();
+      const countdownDuration = triggerStore.triggerDelay;
 
       this.triggerInterval = setInterval(() => {
         timeElapsed = Math.floor((Date.now() - startTime) / 1000);
-        const remainingSeconds = 10 - timeElapsed;
+        const remainingSeconds = countdownDuration - timeElapsed;
 
         // Update countdown
         if (remainingSeconds >= 0) {
           this.triggerCountdown = remainingSeconds;
           this.triggerMessage = `Countdown in progress: ${remainingSeconds}s remaining`;
-          console.log(`⏱️ TimeOnTravelPage trigger countdown: ${remainingSeconds} seconds remaining`);
+          console.log(`⏱️ ${triggerStore.triggerName} trigger countdown: ${remainingSeconds} seconds remaining`);
         }
 
         // When countdown reaches zero, trigger the chat
-        if (timeElapsed >= 10) {
+        if (timeElapsed >= countdownDuration) {
           clearInterval(this.triggerInterval);
           this.triggerInterval = null;
           this.triggerCountdown = 0;
           this.triggerMessage = 'EXECUTING trigger NOW';
-          console.log('🔔 EXECUTING proactive chat trigger: TimeOnTravelPage');
+          console.log(`🔔 EXECUTING proactive chat trigger: ${triggerStore.triggerName}`);
 
           // Make the clock pulse
           const clockEl = document.getElementById('triggerClock');
@@ -315,8 +319,8 @@ export default {
           if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
             try {
               // Actually trigger the chat
-              window.PegaUnifiedChatWidget.triggerChat('TimeOnTravelPage');
-              console.log('✅ Successfully triggered TimeOnTravelPage chat');
+              window.PegaUnifiedChatWidget.triggerChat(triggerStore.triggerName);
+              console.log(`✅ Successfully triggered ${triggerStore.triggerName} chat`);
 
               // Update the status
               this.triggerMessage = '✅ Trigger successfully executed!';
@@ -366,14 +370,15 @@ export default {
 
     // For manual testing from console
     manualTrigger() {
-      console.log('🔔 Manually triggering TimeOnTravelPage');
+      console.log(`🔔 Manually triggering ${triggerStore.triggerName}`);
       this.triggerMessage = 'Manually triggering NOW';
-      if (window.PegaUnifiedChatWidget && typeof window.PegaUnifiedChatWidget.triggerChat === 'function') {
-        window.PegaUnifiedChatWidget.triggerChat('TimeOnTravelPage');
+
+      const result = triggerStore.triggerChat();
+
+      if (result) {
         this.triggerMessage = '✅ Manual trigger executed!';
         return 'Trigger sent!';
       } else {
-        console.error('Widget not available');
         this.triggerMessage = '❌ ERROR: Widget not available';
         return 'Widget not available';
       }
@@ -381,7 +386,7 @@ export default {
   },
   mounted() {
     // Make the manual trigger available globally
-    window.triggerTimeOnTravelPage = this.manualTrigger;
+    window.triggerChat = this.manualTrigger;
 
     // Listen for the widget loaded event
     document.addEventListener('PegaChatWidget:Loaded', () => {
@@ -395,13 +400,13 @@ export default {
     });
 
     // Start checking for the widget
-    console.log('🚀 TimeOnTravelPage trigger initialized in Vue component');
+    console.log(`🚀 ${triggerStore.triggerName} trigger initialized in Vue component`);
     setTimeout(this.checkWidgetAndStart, 1000);
 
     // Add event listener for keypress
     document.addEventListener('keydown', this.handleKeyPress);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // Remove event listener for keypress
     document.removeEventListener('keydown', this.handleKeyPress);
 
