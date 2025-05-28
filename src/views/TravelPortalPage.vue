@@ -130,15 +130,8 @@
               <h2>Our travel credit cards</h2>
               <div class="cards-row">
                 <div class="card-container">
-                  <div class="credit-card travelers-card">
-                    <div class="card-content">
-                      <div class="card-logo">U+</div>
-                      <div class="card-name">Travelers</div>
-                      <div class="card-chip"></div>
-                      <div class="card-number">•••• •••• •••• 5678</div>
-                      <div class="card-expiry">VALID THRU 01/28</div>
-                      <div class="cardholder-name">YOUR NAME</div>
-                    </div>
+                  <div class="credit-card-image">
+                    <img src="/retail_bank/img/travel/UPlusTravelers.png" alt="U+ Travelers Card" class="card-image" />
                   </div>
                   <div class="card-details">
                     <h3>U+ Travelers</h3>
@@ -150,15 +143,8 @@
                 </div>
 
                 <div class="card-container featured">
-                  <div class="credit-card platinum-card">
-                    <div class="card-content">
-                      <div class="card-logo">U+</div>
-                      <div class="card-name">Platinum</div>
-                      <div class="card-chip"></div>
-                      <div class="card-number">•••• •••• •••• 9012</div>
-                      <div class="card-expiry">VALID THRU 01/28</div>
-                      <div class="cardholder-name">YOUR NAME</div>
-                    </div>
+                  <div class="credit-card-image">
+                    <img src="/retail_bank/img/travel/UPlusPlatinum.png" alt="U+ Platinum Travel Card" class="card-image" />
                   </div>
                   <div class="card-details">
                     <h3>U+ Platinum Travel Card</h3>
@@ -173,15 +159,8 @@
                 </div>
 
                 <div class="card-container">
-                  <div class="credit-card explorer-card">
-                    <div class="card-content">
-                      <div class="card-logo">U+</div>
-                      <div class="card-name">Explorer</div>
-                      <div class="card-chip"></div>
-                      <div class="card-number">•••• •••• •••• 1234</div>
-                      <div class="card-expiry">VALID THRU 01/28</div>
-                      <div class="cardholder-name">YOUR NAME</div>
-                    </div>
+                  <div class="credit-card-image">
+                    <img src="/retail_bank/img/travel/UPlusExplorer.png" alt="U+ Explorer Card" class="card-image" />
                   </div>
                   <div class="card-details">
                     <h3>U+ Explorer</h3>
@@ -725,6 +704,20 @@ export default {
   overflow: hidden;
 }
 
+.credit-card-image {
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
 .explorer-card {
   background: linear-gradient(135deg, #1e5799, #207cca);
 }
@@ -894,7 +887,7 @@ export default {
 .featured::before {
   content: 'RECOMMENDED';
   position: absolute;
-  top: 10px;
+  top: 100px;
   left: 0;
   background: #2D8259;
   color: white;
