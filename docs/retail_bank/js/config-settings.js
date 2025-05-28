@@ -51,7 +51,7 @@ window.settings = {
   quicklinks: [
     {
       title: {
-        en: "Request a service",
+        en: "Statements",
       },
       action: "createNewWork",
       actionparam: "",
@@ -93,7 +93,7 @@ window.settings = {
     },
     {
       title: {
-        en: "Update billing",
+        en: "Transfer money",
       },
       action: "createNewWork",
       actionparam: "",
@@ -111,47 +111,6 @@ window.settings = {
       pageTemplate: 'assignment',
       hideusers: "",
       heading: '',
-    },
-    {
-      title: {
-        en: "Proof of insurance",
-      },
-      action: "createNewWork",
-      actionparam: "",
-      objclass: "",
-      url: "",
-      startcase: "pyStartCase",
-      application: "",
-      icon: "",
-      extraparam: "",
-      hide: false,
-      channelid: "",
-      tenantid: "",
-      dataretained: true,
-      hideassignmentheader: false,
-      pageTemplate: 'assignment',
-      hideusers: "",
-      heading: '',
-    },
-    {
-      title: {
-        en: "Update your profile",
-      },
-      action: "createNewWork",
-      actionparam: "",
-      objclass: "",
-      url: "",
-      startcase: "pyStartCase",
-      application: "",
-      icon: "",
-      extraparam: "",
-      hide: false,
-      channelid: "",
-      tenantid: "",
-      dataretained: true,
-      hideassignmentheader: false,
-      pageTemplate: 'assignment',
-      hideusers: "",
     },
   ],
   billpay: {

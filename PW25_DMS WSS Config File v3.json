@@ -1,4 +1,4 @@
-window.settings = {
+{
   "i18n": {
     "defaultlocale": "en",
     "languages": [
@@ -466,6 +466,182 @@ window.settings = {
       ],
       "hide_from_dropdown": false,
       "focustabindex": 0
+    },
+    {
+      "username": "Ali.Mohammed@sample.com",
+      "password": "install12345!",
+      "img": "avatar-1.jpg",
+      "company_name": "",
+      "name": "Mohammed Ali",
+      "accountID": "",
+      "contactID": "",
+      "customerID": "",
+      "extraparam": "",
+      "dmm_context_data": "",
+      "pega_userid": "FSSelfServiceAdmin",
+      "pega_pwd": "install12345!",
+      "bill_pay": 164.8,
+      "load_by_default": false,
+      "show_opname": false,
+      "otp_send_to": "",
+      "accountdetails": [
+        [
+          {
+            "label": "Card number",
+            "value": "***9990"
+          },
+          {
+            "label": "Name on card",
+            "value": "Joseph Miller"
+          },
+          {
+            "label": "Expiration",
+            "value": "08/26"
+          },
+          {
+            "label": "Card status",
+            "value": "Active"
+          }
+        ]
+      ],
+      "accountpicker": [
+        {
+          "img": "img/account-picker1.jpg",
+          "title": "Cashback Plus",
+          "showbillpay": true,
+          "details": [
+            {
+              "label": "Account balance",
+              "type": "currency",
+              "value": 4824.32
+            },
+            {
+              "label": "Statement balance",
+              "type": "currency",
+              "value": 3924.58
+            },
+            {
+              "label": "Minimum due",
+              "type": "currency",
+              "value": 75
+            },
+            {
+              "label": "Due date",
+              "type": "text",
+              "value": "Aug 20, 2023"
+            }
+          ]
+        },
+        {
+          "img": "account-picker1.png",
+          "title": "Premier Checking",
+          "details": [
+            {
+              "label": "Account number",
+              "value": "9999999801"
+            },
+            {
+              "label": "Account balance",
+              "type": "currency",
+              "value": 1800
+            }
+          ]
+        }
+      ],
+      "recentactivity": [
+        {
+          "date": "07/31/2023",
+          "message": "DVD Rentals, Inc.",
+          "cost": 122
+        },
+        {
+          "date": "07/30/2023",
+          "message": "Super Fuel Inc.",
+          "cost": 88
+        },
+        {
+          "date": "07/26/2023",
+          "message": "Late payment fee",
+          "cost": 25
+        },
+        {
+          "date": "07/25/2023",
+          "message": "ATM #5722.",
+          "cost": 200
+        },
+        {
+          "date": "07/25/2023",
+          "message": "DVD Rentals, Inc.",
+          "cost": 122
+        }
+      ],
+      "hide_from_dropdown": false,
+      "focustabindex": 0
+    },
+    {
+      "username": "sheaparkerXX@mail.pegatsdemo.com",
+      "password": "install12345!",
+      "img": "avatar-2.jpg",
+      "company_name": "",
+      "name": "Shea Parker",
+      "accountID": "5989919999999990",
+      "contactID": "7777777773",
+      "customerID": "PEGASAFS-WORK-CONTACT CON-490",
+      "extraparam": "email=sheaparkerXX@mail.pegatsdemo.com,ContactId=7777777773,AccountNumber=5989919999999990,AccountId=5989919999999990,Verified=true",
+      "dmm_context_data": "",
+      "pega_userid": "sheaparker007@gmail.com",
+      "pega_pwd": "install12345!",
+      "bill_pay": 3924.58,
+      "load_by_default": false,
+      "accounts": [
+        {
+          "number": "****0000",
+          "name": "Disbursement Account",
+          "type": "Zero balance",
+          "balance": 300150.19
+        },
+        {
+          "number": "****0100",
+          "name": "Operating Account",
+          "type": "DDA",
+          "balance": 1335000.62
+        },
+        {
+          "number": "****0300",
+          "name": "Customer Payment Account",
+          "type": "Sweep",
+          "balance": 43921.82
+        }
+      ],
+      "investmentaccounts": [
+        {
+          "number": "***3415-100",
+          "name": "Enhanced Commodity fund",
+          "type": "High Yield Investment",
+          "trend": "green",
+          "trendvalue": ".06",
+          "balance": 106210093.12
+        },
+        {
+          "number": "***4512-100",
+          "name": "CD90",
+          "type": "Time Deposit, 90 day",
+          "trend": "red",
+          "trendvalue": ".03",
+          "balance": 10006591.96
+        },
+        {
+          "number": "***5213-100",
+          "name": "CD180",
+          "type": "Time Deposit, 6 months",
+          "trend": "green",
+          "trendvalue": ".01",
+          "balance": 25000180.34
+        }
+      ],
+      "otp_send_to": "",
+      "hide_from_dropdown": false,
+      "focustabindex": 0
     }
   ],
   "pega_chat": {
@@ -533,6 +709,24 @@ window.settings = {
         "placement": "Hero,Tile,Tile,Tile",
         "clickaction": "Mashup",
         "attributes": ""
+      },
+      {
+        "containerName": "TopOffers",
+        "placement": "Hero,Tile,Tile,Tile",
+        "clickaction": "Mashup",
+        "attributes": ""
+      },
+      {
+        "containerName": "TopOffers",
+        "placement": "Hero,Tile,Tile,Tile",
+        "clickaction": "Mashup",
+        "attributes": ""
+      },
+      {
+        "containerName": "TopOffers",
+        "placement": "Hero,Tile,Tile,Tile",
+        "clickaction": "Mashup",
+        "attributes": ""
       }
     ]
   },
@@ -543,6 +737,20 @@ window.settings = {
       "ElementName": "",
       "SendAcknowledgement": false,
       "AcknowledgeOn": "After5Seconds"
+    },
+    {
+      "CustomEventAction": "HighlightElement",
+      "CustomEventName": "Custom Event 2",
+      "ElementName": "",
+      "SendAcknowledgement": false,
+      "AcknowledgeOn": "After5Seconds"
+    },
+    {
+      "CustomEventAction": "HighlightElement",
+      "CustomEventName": "Custom Event 3",
+      "ElementName": "",
+      "SendAcknowledgement": false,
+      "AcknowledgeOn": "After5Seconds"
     }
   ]
-};
+}

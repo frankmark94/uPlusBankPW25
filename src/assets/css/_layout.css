@@ -403,17 +403,53 @@ footer nav > div.flex {
   width: fit-content;
 }
 .account-picker-details {
-  display: flex;
-  flex-flow:row wrap;
-  flex:1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  align-items: start;
 }
 .account-picker-details > div {
-  margin: 0 8px 8px 0;
-  min-width: calc(33.3333% - 8px);
+  margin: 0;
+  min-width: auto;
 }
+
+/* Special layout for account number and balance to be more prominent */
+.account-picker-details > div:first-child {
+  grid-column: 1;
+}
+.account-picker-details > div:nth-child(2) {
+  grid-column: 2;
+}
+.account-picker-details > div:nth-child(3) {
+  grid-column: 3;
+}
+.account-picker-details > div:nth-child(4) {
+  grid-column: 1;
+}
+.account-picker-details > div:nth-child(5) {
+  grid-column: 2;
+}
+
+/* Better spacing for account details labels and values */
+.account-picker-details > div > label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.account-picker-details > div > p {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #333;
+}
+
 .account-view-details {
   min-width: 105px;
-  text-align:end;
+  text-align: end;
+  align-self: start;
 }
 
 .col.col-1 {

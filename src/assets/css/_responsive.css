@@ -263,8 +263,12 @@
 }
 
 @media only screen and (max-width: 700px) {
-  .account-picker-details > div {
-    min-width: 50%;
+  .account-picker-details {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .account-picker-details > div:nth-child(5) {
+    grid-column: 1;
   }
   .col-2 {
     flex-flow: column;
@@ -329,6 +333,19 @@
 }
 
 @media screen and (max-width: 567px) {
+
+  .account-picker-details {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .account-picker-details > div:first-child,
+  .account-picker-details > div:nth-child(2),
+  .account-picker-details > div:nth-child(3),
+  .account-picker-details > div:nth-child(4),
+  .account-picker-details > div:nth-child(5) {
+    grid-column: 1;
+  }
 
   .primary-options .front-option {
     flex-flow: row nowrap;

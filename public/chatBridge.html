@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Bridge</title>
+  <script>
+    // This script will be used as a bridge between the main app and the chat iframe
+    (function() {
+      // Set up window message listener
+      window.addEventListener('message', function(event) {
+        console.log('[Chat Bridge] Received message:', event.data);
+
+        // Process the message
+        if (event.data && event.data.action === 'injectText') {
+          const text = event.data.text;
+          const shouldSend = event.data.sendAfterInject;
+
+          // First, try to access the top document to find the textarea
+          try {
+            let topDoc = window.top.document;
+
+            // Find the specific textarea shown in the console logs
+            let textareas = topDoc.querySelectorAll('textarea[data-testid="type_a_message"]');
+            if (textareas.length > 0) {
+              let inputField = textareas[0];
+              console.log('[Chat Bridge] Found chat textarea directly in top document', inputField);
+
+              // Set the value
+              inputField.value = text;
+              inputField.dispatchEvent(new Event('input', { bubbles: true }));
+              inputField.dispatchEvent(new Event('change', { bubbles: true }));
+
+              // Handle auto-send
+              if (shouldSend) {
+                setTimeout(function() {
+                  // Look for a send button near the textarea
+                  let parent = inputField.parentElement;
+                  let sendButton = null;
+
+                  // Check up to 3 levels up
+                  for (let i = 0; i < 3 && parent && !sendButton; i++) {
+                    const buttons = parent.querySelectorAll('button');
+
+                    for (const button of buttons) {
+                      if (button.textContent && button.textContent.toLowerCase().includes('send') ||
+                          button.title && button.title.toLowerCase().includes('send') ||
+                          button.getAttribute('aria-label') && button.getAttribute('aria-label').toLowerCase().includes('send')) {
+                        sendButton = button;
+                        break;
+                      }
+                    }
+
+                    // If no specific send button found but we have buttons, use the last one
+                    if (!sendButton && buttons.length > 0) {
+                      sendButton = buttons[buttons.length - 1];
+                    }
+
+                    parent = parent.parentElement;
+                  }
+
+                  if (sendButton) {
+                    sendButton.click();
+                    console.log('[Chat Bridge] Clicked send button in top document');
+                  } else {
+                    console.log('[Chat Bridge] No send button found in top document');
+                  }
+                }, 100);
+              }
+
+              // Successfully handled the message
+              return;
+            }
+          } catch (e) {
+            console.error('[Chat Bridge] Error accessing top document:', e);
+          }
+
+          // If direct top document approach failed, try iframes
+          // Find the chat iframe
+          const chatIframes = Array.from(document.querySelectorAll('iframe'));
+
+          // For each iframe, forward the message
+          chatIframes.forEach(iframe => {
+            try {
+              // Forward the message to all iframes
+              iframe.contentWindow.postMessage(event.data, '*');
+              console.log('[Chat Bridge] Forwarded message to iframe:', iframe);
+            } catch (e) {
+              console.error('[Chat Bridge] Error forwarding message to iframe:', e);
+            }
+          });
+
+          // Also try to find chat inputs directly in this document
+          const inputs = document.querySelectorAll('textarea, input[type="text"]');
+          inputs.forEach(input => {
+            if (input.placeholder && (
+                input.placeholder.toLowerCase().includes('message') ||
+                input.placeholder.toLowerCase().includes('type'))) {
+              // Found a chat input field, set its value
+              input.value = text;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              console.log('[Chat Bridge] Text injected into field:', input);
+
+              // Auto-send if requested
+              if (shouldSend) {
+                setTimeout(function() {
+                  const buttons = document.querySelectorAll('button');
+                  for (const button of buttons) {
+                    if (button.textContent && (
+                        button.textContent.toLowerCase().includes('send') ||
+                        button.title && button.title.toLowerCase().includes('send') ||
+                        button.getAttribute('aria-label') && button.getAttribute('aria-label').toLowerCase().includes('send'))) {
+                      button.click();
+                      console.log('[Chat Bridge] Clicked send button');
+                      break;
+                    }
+                  }
+                }, 100);
+              }
+            }
+          });
+        }
+      });
+
+      // Send ready message
+      try {
+        window.parent.postMessage({ status: 'bridge-ready', source: 'chat-bridge' }, '*');
+        console.log('[Chat Bridge] Bridge ready, sent confirmation to parent');
+      } catch (e) {
+        console.error('[Chat Bridge] Failed to send ready message:', e);
+      }
+
+      // Periodically scan for the chat textarea in the top window to help the injector
+      setInterval(function() {
+        try {
+          let topDoc = window.top.document;
+          let textareas = topDoc.querySelectorAll('textarea[data-testid="type_a_message"]');
+
+          if (textareas.length > 0) {
+            console.log('[Chat Bridge] Found chat textarea in periodic scan:', textareas[0]);
+
+            // Notify the parent
+            window.parent.postMessage({
+              status: 'textarea-found',
+              source: 'chat-bridge',
+              info: {
+                id: textareas[0].id,
+                placeholder: textareas[0].placeholder,
+                dataTestId: textareas[0].getAttribute('data-testid')
+              }
+            }, '*');
+          }
+        } catch (e) {
+          // Silent error, don't spam console
+        }
+      }, 2000);
+
+      // Continue with MutationObserver for iframe handling
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.addedNodes) {
+            mutation.addedNodes.forEach(function(node) {
+              // Check for added textarea that might be the chat input
+              if (node.nodeType === 1 && node.tagName === 'TEXTAREA' &&
+                  node.getAttribute('data-testid') === 'type_a_message') {
+                console.log('[Chat Bridge] Found chat textarea directly:', node);
+
+                // Notify the parent
+                window.parent.postMessage({
+                  status: 'textarea-found',
+                  source: 'chat-bridge',
+                  info: {
+                    id: node.id,
+                    placeholder: node.placeholder,
+                    dataTestId: node.getAttribute('data-testid')
+                  }
+                }, '*');
+              }
+
+              // Continue checking for iframes
+              if (node.nodeName === 'IFRAME') {
+                console.log('[Chat Bridge] New iframe detected, will inject listener');
+                try {
+                  // Try to inject a listener script into the iframe
+                  const iframe = node;
+
+                  // Wait for iframe to load
+                  iframe.addEventListener('load', function() {
+                    try {
+                      // Try to access iframe content and inject listener
+                      const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+                      // Create a script element with listener
+                      const script = doc.createElement('script');
+                      script.textContent = `
+                        // Set up a message listener for the iframe
+                        window.addEventListener('message', function(event) {
+                          console.log('[Chat Bridge Iframe] Received message:', event.data);
+
+                          if (event.data && event.data.action === 'injectText') {
+                            const text = event.data.text;
+                            const shouldSend = event.data.sendAfterInject;
+
+                            // Find input fields
+                            const inputs = document.querySelectorAll('textarea, input[type="text"]');
+
+                            // Look for suitable input
+                            let found = false;
+                            inputs.forEach(input => {
+                              if (input.placeholder && (
+                                  input.placeholder.toLowerCase().includes('message') ||
+                                  input.placeholder.toLowerCase().includes('type'))) {
+                                // Found a chat input field, set its value
+                                input.value = text;
+                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                                input.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('[Chat Bridge Iframe] Text injected into field:', input);
+                                found = true;
+
+                                // Auto-send if requested
+                                if (shouldSend) {
+                                  setTimeout(function() {
+                                    const buttons = document.querySelectorAll('button');
+                                    for (const button of buttons) {
+                                      if (button.textContent && (
+                                          button.textContent.toLowerCase().includes('send') ||
+                                          button.title && button.title.toLowerCase().includes('send') ||
+                                          button.getAttribute('aria-label') && button.getAttribute('aria-label').toLowerCase().includes('send'))) {
+                                        button.click();
+                                        console.log('[Chat Bridge Iframe] Clicked send button');
+                                        break;
+                                      }
+                                    }
+                                  }, 100);
+                                }
+                              }
+                            });
+
+                            if (!found) {
+                              console.log('[Chat Bridge Iframe] No suitable input field found');
+                            }
+                          }
+                        });
+
+                        // Send ready message
+                        try {
+                          window.parent.postMessage({ status: 'iframe-ready', source: 'chat-bridge-iframe' }, '*');
+                          console.log('[Chat Bridge Iframe] Listener ready');
+                        } catch (e) {
+                          console.error('[Chat Bridge Iframe] Failed to send ready message:', e);
+                        }
+                      `;
+
+                      // Append the script to the iframe's document
+                      doc.head.appendChild(script);
+                      console.log('[Chat Bridge] Injected listener into iframe:', iframe);
+                    } catch (e) {
+                      console.error('[Chat Bridge] Failed to inject listener into iframe (likely cross-origin):', e);
+                    }
+                  });
+                } catch (e) {
+                  console.error('[Chat Bridge] Error processing new iframe:', e);
+                }
+              }
+            });
+          }
+        });
+      });
+
+      // Start observing the document with the configured parameters
+      observer.observe(document, { childList: true, subtree: true });
+
+      console.log('[Chat Bridge] Bridge initialized and ready');
+    })();
+  </script>
+</head>
+<body>
+  <h1>Chat Bridge</h1>
+  <p>This page serves as a communication bridge for the chat injector.</p>
+  <p>If you're seeing this page, it means you've navigated to it directly.</p>
+  <p>This page is meant to be loaded in an iframe by the chat injector.</p>
+</body>
+</html>

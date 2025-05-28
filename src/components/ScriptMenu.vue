@@ -48,20 +48,85 @@
               </div>
             </div>
             <div v-else class="view-mode">
-              <p>Press a number key (1-9) to copy the corresponding script to clipboard:</p>
+              <p>Press a number key (1-9) to execute the corresponding script:</p>
               <div v-for="(script, index) in scripts" :key="index" class="script-item">
                 <div class="script-key">{{ index + 1 }}</div>
                 <div class="script-text">{{ script }}</div>
               </div>
+
               <div class="script-menu-hint">
-                <i>💡 Tip: Number keys 1-9 will silently copy scripts even when this menu is closed.</i>
+                <i>💡 Tip: Number keys 1-9 will execute scripts even when this menu is closed.</i>
               </div>
+
               <div class="script-settings">
-                <label>
-                  <input type="checkbox" v-model="showSilentCopyIndicator" @change="saveIndicatorSetting">
-                  Show floating indicator when menu is closed
-                </label>
+                <h4>Script Execution Settings</h4>
+
+                <div class="setting-group">
+                  <label>Script Mode:</label>
+                  <div class="radio-group">
+                    <label class="radio-option">
+                      <input
+                        type="radio"
+                        v-model="scriptSettings.injectMode"
+                        value="inject"
+                        @change="saveScriptSettings"
+                      >
+                      Inject into chat
+                    </label>
+                    <label class="radio-option">
+                      <input
+                        type="radio"
+                        v-model="scriptSettings.injectMode"
+                        value="copy"
+                        @change="saveScriptSettings"
+                      >
+                      Copy to clipboard
+                    </label>
+                    <label class="radio-option">
+                      <input
+                        type="radio"
+                        v-model="scriptSettings.injectMode"
+                        value="both"
+                        @change="saveScriptSettings"
+                      >
+                      Inject, fallback to copy
+                    </label>
+                  </div>
+                </div>
+
+                <div class="setting-group">
+                  <div class="toggle-switch">
+                    <label class="switch">
+                      <input
+                        type="checkbox"
+                        v-model="scriptSettings.sendAfterInject"
+                        @change="saveScriptSettings"
+                        :disabled="scriptSettings.injectMode === 'copy'"
+                      >
+                      <span class="slider round"></span>
+                    </label>
+                    <span class="toggle-label">Auto-send after injection</span>
+                  </div>
+                </div>
+
+                <div class="setting-group">
+                  <label>
+                    <input type="checkbox" v-model="showSilentCopyIndicator" @change="saveIndicatorSetting">
+                    Show floating indicator when menu is closed
+                  </label>
+                </div>
+
+                <div class="setting-group" v-if="scriptSettings.injectMode !== 'copy'">
+                  <button @click="testChatInjection" class="test-button">
+                    Test Chat Injection
+                  </button>
+                  <div v-if="lastInjectionResult !== null" class="injection-status">
+                    <span v-if="lastInjectionResult" class="status-success">✅ Injection working</span>
+                    <span v-else class="status-error">❌ Injection failed</span>
+                  </div>
+                </div>
               </div>
+
               <div class="script-menu-footer">
                 <button @click="enterEditMode" class="edit-button">Edit Scripts</button>
               </div>
@@ -333,6 +398,7 @@
 <script>
 import triggerStore from '../triggerStore';
 import widgetConfig from '../widgetConfigStore';
+import chatInjector from '../chatInjector';
 
 export default {
   name: 'ScriptMenu',
@@ -349,6 +415,11 @@ export default {
       customColor: widgetConfig.color,
       customHoverColor: widgetConfig.hoverColor,
       customNotificationColor: widgetConfig.notificationColor,
+      // Script settings
+      scriptSettings: {
+        injectMode: 'both', // 'inject', 'copy', or 'both'
+        sendAfterInject: false, // Whether to automatically send after injecting
+      },
       scripts: [
         'What is the best credit card for international travel?',
         'I leave in two days. How quickly would I be able to get my card?',
@@ -361,7 +432,8 @@ export default {
         'Thanks!'
       ],
       originalScripts: [],
-      silentCopyActive: false
+      silentCopyActive: false,
+      lastInjectionResult: null
     };
   },
   created() {
@@ -369,6 +441,12 @@ export default {
     const savedScripts = localStorage.getItem('scriptMenuScripts');
     if (savedScripts) {
       this.scripts = JSON.parse(savedScripts);
+    }
+
+    // Load script settings from localStorage
+    const savedSettings = localStorage.getItem('scriptSettings');
+    if (savedSettings) {
+      this.scriptSettings = { ...this.scriptSettings, ...JSON.parse(savedSettings) };
     }
 
     // Add event listeners for keyboard shortcuts
@@ -386,7 +464,7 @@ export default {
         event.preventDefault();
       }
 
-      // Handle number key presses for script copying
+      // Handle number key presses for script execution
       if (event.key >= '1' && event.key <= '9') {
         // Don't handle numeric keys if currently editing scripts or if focus is in a text input or textarea
         if (this.isEditing ||
@@ -397,15 +475,7 @@ export default {
 
         const index = parseInt(event.key) - 1;
         if (index < this.scripts.length) {
-          this.copyToClipboard(this.scripts[index]);
-
-          // Only show notification if menu is visible
-          if (this.isVisible) {
-            this.showCopiedMessage(index + 1);
-          } else {
-            // Show subtle feedback when silently copying
-            this.showSilentCopyFeedback(index + 1);
-          }
+          this.executeScript(index);
           event.preventDefault();
         }
       }
@@ -449,10 +519,60 @@ export default {
           console.error('Failed to copy text: ', err);
         });
     },
-    showCopiedMessage(num) {
+    saveScriptSettings() {
+      localStorage.setItem('scriptSettings', JSON.stringify(this.scriptSettings));
+      this.showSavedMessage();
+    },
+    executeScript(index) {
+      const text = this.scripts[index];
+      let success = false;
+
+      // Execute based on injection mode
+      if (this.scriptSettings.injectMode === 'inject' || this.scriptSettings.injectMode === 'both') {
+        // Try to inject text directly into chat widget
+        success = chatInjector.injectText(text, this.scriptSettings.sendAfterInject);
+        this.lastInjectionResult = success;
+
+        // If injection not successful and mode is 'both', fallback to clipboard
+        if (!success && this.scriptSettings.injectMode === 'both') {
+          this.copyToClipboard(text);
+
+          // Show feedback
+          if (this.isVisible) {
+            this.showMessage(`Injection failed - Script #${index + 1} copied to clipboard instead`, 'warning');
+          } else {
+            this.showSilentCopyFeedback(index + 1);
+          }
+          return;
+        }
+      } else {
+        // Copy to clipboard mode
+        this.copyToClipboard(text);
+        success = true;
+      }
+
+      // Show appropriate feedback
+      if (success) {
+        if (this.isVisible) {
+          const action = this.scriptSettings.injectMode === 'copy' ? 'copied to clipboard' : 'injected into chat';
+          this.showMessage(`Script #${index + 1} ${action}!`);
+        } else if (this.scriptSettings.injectMode === 'copy') {
+          this.showSilentCopyFeedback(index + 1);
+        } else {
+          // Show subtle feedback for silent injection
+          this.showSilentInjectionFeedback(index + 1);
+        }
+      } else {
+        // Show error message
+        if (this.isVisible) {
+          this.showMessage(`Failed to process Script #${index + 1}`, 'error');
+        }
+      }
+    },
+    showMessage(message, type = 'info') {
       const notification = document.createElement('div');
-      notification.className = 'script-notification';
-      notification.textContent = `Script #${num} copied to clipboard!`;
+      notification.className = `script-notification ${type}`;
+      notification.textContent = message;
       document.body.appendChild(notification);
 
       setTimeout(() => {
@@ -474,6 +594,24 @@ export default {
         // Reset after a short delay
         setTimeout(() => {
           indicator.classList.remove('silent-copy-active');
+          setTimeout(() => {
+            indicator.textContent = originalText;
+          }, 300);
+        }, 800);
+      }
+    },
+    showSilentInjectionFeedback(num) {
+      // Flash the indicator to show silent injection happened
+      const indicator = document.querySelector('.silent-copy-indicator');
+      if (indicator) {
+        // Show the script number that was injected
+        const originalText = indicator.textContent;
+        indicator.textContent = `Injected #${num}`;
+        indicator.classList.add('silent-injection-active');
+
+        // Reset after a short delay
+        setTimeout(() => {
+          indicator.classList.remove('silent-injection-active');
           setTimeout(() => {
             indicator.textContent = originalText;
           }, 300);
@@ -579,6 +717,16 @@ export default {
 
         this.showSavedMessage();
       }
+    },
+
+    testChatInjection() {
+      const success = chatInjector.injectText('This is a test message from U+Bank script menu', false);
+      if (success) {
+        this.showMessage('Test message successfully injected into chat', 'success');
+      } else {
+        this.showMessage('Failed to inject test message into chat', 'error');
+      }
+      this.lastInjectionResult = success;
     }
   },
   mounted() {
@@ -718,7 +866,7 @@ export default {
   justify-content: flex-end;
 }
 
-.edit-button, .save-button, .cancel-button, .reset-button {
+.edit-button, .save-button, .cancel-button, .reset-button, .test-button {
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
@@ -750,6 +898,32 @@ export default {
 
 .reset-button:hover {
   background-color: #fadbd8;
+}
+
+.test-button {
+  background-color: #3498db;
+  color: white;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.test-button:hover {
+  background-color: #2980b9;
+}
+
+.injection-status {
+  font-size: 0.9rem;
+  padding: 5px 0;
+}
+
+.status-success {
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+.status-error {
+  color: #e74c3c;
+  font-weight: 600;
 }
 
 .script-edit-item {
@@ -792,6 +966,10 @@ export default {
   background-color: #2ecc71;
 }
 
+.script-notification.warning {
+  background-color: #f39c12;
+}
+
 .script-notification.fade-out {
   opacity: 0;
 }
@@ -801,6 +979,13 @@ export default {
   padding: 15px;
   background-color: #f9f9f9;
   border-radius: 4px;
+}
+
+.script-settings h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #005501;
+  font-size: 1rem;
 }
 
 .script-settings label {
@@ -866,6 +1051,11 @@ export default {
 
 .silent-copy-indicator.silent-copy-active {
   background-color: #ff6b00;
+  transform: scale(1.05);
+}
+
+.silent-copy-indicator.silent-injection-active {
+  background-color: #3498db;
   transform: scale(1.05);
 }
 
@@ -1008,20 +1198,90 @@ input:checked + .slider:before {
 .color-picker-container {
   display: flex;
   align-items: center;
+  margin-top: 5px;
 }
 
 input[type="color"] {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   border: none;
   border-radius: 4px;
   padding: 0;
-  margin-right: 10px;
+  margin-right: 12px;
   cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+input[type="color"]:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+input[type="color"]:active {
+  transform: scale(0.98);
 }
 
 .color-text-input {
   width: 100px !important;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.color-text-input:hover {
+  border-color: #bbb;
+}
+
+.color-text-input:focus {
+  border-color: #005501;
+  box-shadow: 0 0 0 2px rgba(0, 85, 1, 0.1);
+  outline: none;
+}
+
+.setting-group input[type="text"],
+.setting-group input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.setting-group input[type="text"]:hover,
+.setting-group input[type="number"]:hover {
+  border-color: #bbb;
+}
+
+.setting-group input[type="text"]:focus,
+.setting-group input[type="number"]:focus {
+  border-color: #005501;
+  box-shadow: 0 0 0 2px rgba(0, 85, 1, 0.1);
+  outline: none;
+}
+
+/* Improved toggle switch hover effect */
+.switch:hover {
+  opacity: 0.9;
+}
+
+.toggle-label {
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.switch:hover + .toggle-label {
+  color: #005501;
+}
+
+/* Reset button hover effect */
+.reset-button:hover {
+  background-color: #fadbd8;
+  color: #c0392b;
+  border-color: #e74c3c;
 }
 
 .radio-group {
@@ -1034,23 +1294,59 @@ input[type="color"] {
   display: flex;
   align-items: center;
   font-weight: normal;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.radio-option:hover {
+  background-color: rgba(0, 85, 1, 0.1);
 }
 
 .radio-option input {
-  margin-right: 5px;
+  margin-right: 10px;
 }
 
 .widget-preview {
   background-color: #f8f8f8;
-  padding: 15px;
+  padding: 20px;
   border-radius: 4px;
-  margin-top: 20px;
+  margin-top: 25px;
+  border: 1px solid #eee;
+  transition: all 0.3s ease;
+}
+
+.widget-preview:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #ddd;
+}
+
+.widget-preview h5 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #005501;
+  font-size: 1.1rem;
+  text-align: center;
 }
 
 .preview-container {
   display: flex;
   justify-content: center;
-  padding: 20px 0;
+  padding: 30px 0;
+  position: relative;
+}
+
+.preview-container::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 10px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
 }
 
 .preview-widget {
@@ -1059,22 +1355,41 @@ input[type="color"] {
   background-color: #005501;
   color: white;
   border-radius: 30px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   border: 2px solid transparent;
   position: relative;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  transform: scale(1);
+}
+
+.preview-widget:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+
+.preview-widget:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .preview-icon {
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   background-color: rgba(255,255,255,0.2);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: bold;
-  margin-right: 10px;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+}
+
+.preview-widget:hover .preview-icon {
+  transform: scale(1.1);
+  background-color: rgba(255,255,255,0.3);
 }
 
 .preview-text {
@@ -1126,5 +1441,56 @@ input[type="color"] {
     flex-direction: column;
     gap: 8px;
   }
+}
+
+/* Add hover states for buttons */
+.edit-button:hover, .test-button:hover {
+  background-color: #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.save-button:hover {
+  background-color: #004401;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.trigger-button:hover {
+  background-color: #e05d00;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Widget Configuration Settings */
+.widget-settings .radio-group {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.widget-settings .radio-option {
+  border: 1px solid #ddd;
+  padding: 8px 15px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.widget-settings .radio-option:hover {
+  background-color: rgba(0, 85, 1, 0.08);
+  border-color: #005501;
+  box-shadow: 0 1px 4px rgba(0, 85, 1, 0.1);
+}
+
+.widget-settings .radio-option input:checked + span,
+.widget-settings .radio-option input:checked {
+  font-weight: 600;
+  color: #005501;
+}
+
+.widget-settings .setting-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
 }
 </style>

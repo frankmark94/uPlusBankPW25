@@ -130,26 +130,6 @@
               <h2>Our travel credit cards</h2>
               <div class="cards-row">
                 <div class="card-container">
-                  <div class="credit-card explorer-card">
-                    <div class="card-content">
-                      <div class="card-logo">U+</div>
-                      <div class="card-name">Explorer</div>
-                      <div class="card-chip"></div>
-                      <div class="card-number">•••• •••• •••• 1234</div>
-                      <div class="card-expiry">VALID THRU 01/28</div>
-                      <div class="cardholder-name">YOUR NAME</div>
-                    </div>
-                  </div>
-                  <div class="card-details">
-                    <h3>U+ Explorer</h3>
-                    <p>3X points on dining and grocery</p>
-                    <p>2X points on all other purchases</p>
-                    <p>No foreign transaction fees</p>
-                    <p><strong>Annual fee:</strong> $95</p>
-                  </div>
-                </div>
-
-                <div class="card-container featured">
                   <div class="credit-card travelers-card">
                     <div class="card-content">
                       <div class="card-logo">U+</div>
@@ -162,18 +142,18 @@
                   </div>
                   <div class="card-details">
                     <h3>U+ Travelers</h3>
-                    <p>5X points on travel bookings</p>
-                    <p>3X points on restaurants worldwide</p>
-                    <p>Priority boarding & lounge access</p>
-                    <p><strong>Annual fee:</strong> $150</p>
+                    <p>2x points on travel and dining</p>
+                    <p>1x points on all other purchases</p>
+                    <p>No foreign transaction fees</p>
+                    <p><strong>Annual fee:</strong> $0</p>
                   </div>
                 </div>
 
-                <div class="card-container">
-                  <div class="credit-card premium-card">
+                <div class="card-container featured">
+                  <div class="credit-card platinum-card">
                     <div class="card-content">
                       <div class="card-logo">U+</div>
-                      <div class="card-name">Premium</div>
+                      <div class="card-name">Platinum</div>
                       <div class="card-chip"></div>
                       <div class="card-number">•••• •••• •••• 9012</div>
                       <div class="card-expiry">VALID THRU 01/28</div>
@@ -181,11 +161,35 @@
                     </div>
                   </div>
                   <div class="card-details">
-                    <h3>U+ Premium</h3>
-                    <p>2X points on all purchases</p>
-                    <p>Annual travel credit of $300</p>
-                    <p>Exclusive concierge service</p>
-                    <p><strong>Annual fee:</strong> $550</p>
+                    <h3>U+ Platinum Travel Card</h3>
+                    <p>3x points on travel and dining</p>
+                    <p>1x points on all other purchases</p>
+                    <p>$250 annual travel credit</p>
+                    <p>Reimbursement for Global Entry and TSA Precheck</p>
+                    <p>Points worth 50% more when redeemed for travel</p>
+                    <p>No foreign transaction fees</p>
+                    <p><strong>Annual fee:</strong> $499</p>
+                  </div>
+                </div>
+
+                <div class="card-container">
+                  <div class="credit-card explorer-card">
+                    <div class="card-content">
+                      <div class="card-logo">U+</div>
+                      <div class="card-name">Explorer</div>
+                      <div class="card-chip"></div>
+                      <div class="card-number">•••• •••• •••• 1234</div>
+                      <div class="card-expiry">VALID THRU 01/28</div>
+                      <div class="cardholder-name">YOUR NAME</div>
+                    </div>
+                  </div>
+                  <div class="card-details">
+                    <h3>U+ Explorer</h3>
+                    <p>2x points on travel and dining</p>
+                    <p>1x points on all other purchases</p>
+                    <p>Points worth 25% more when redeemed for travel</p>
+                    <p>No foreign transaction fees</p>
+                    <p><strong>Annual fee:</strong> $99</p>
                   </div>
                 </div>
               </div>
@@ -733,6 +737,10 @@ export default {
   background: linear-gradient(135deg, #24243e, #302b63, #0f0c29);
 }
 
+.platinum-card {
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+}
+
 .card-content {
   height: 100%;
   display: flex;
@@ -802,21 +810,70 @@ export default {
 }
 
 .card-details {
-  padding: 25px;
+  padding: 30px 25px;
+  background: #fafafa;
+  border-top: 1px solid #e8e8e8;
 }
 
 .card-details h3 {
-  color: #333;
-  margin-bottom: 15px;
-  font-size: 1.4rem;
-  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
 }
 
 .card-details p {
-  color: #666;
-  margin-bottom: 10px;
+  color: #4a4a4a;
+  margin-bottom: 8px;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 16px;
+}
+
+.card-details p::before {
+  content: '•';
+  color: #2D8259;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  font-size: 1.1rem;
+}
+
+.card-details p:last-child {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  font-weight: 600;
+  color: #2D8259;
+  font-size: 1.05rem;
+  padding-left: 0;
+}
+
+.card-details p:last-child::before {
+  display: none;
+}
+
+.featured .card-details {
+  background: #f8fffe;
+  border-top: 2px solid #2D8259;
+}
+
+.featured .card-details h3 {
+  color: #1a5a3a;
+  font-weight: 800;
+  font-size: 1.6rem;
+}
+
+.featured .card-details p:last-child {
+  color: #1a5a3a;
+  font-weight: 700;
+  font-size: 1.1rem;
 }
 
 .featured {
